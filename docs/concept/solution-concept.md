@@ -1,7 +1,9 @@
 # Solution Concept: DT Mobility Fleet Management Platform
 
-**Source:** [NEW Design / Implementation / Concept](https://wiki.telekom.de/spaces/MBI/pages/3691940648/NEW+Design+Implementation+Concept) — DT Mobility Confluence Space  
-**Last updated in source:** Dec 18, 2025  
+**Sources:**
+- [NEW Design / Implementation / Concept](https://wiki.telekom.de/spaces/MBI/pages/3691940648/NEW+Design+Implementation+Concept) — DT Mobility Confluence Space (Dec 18, 2025)
+- [Architecture](https://wiki.telekom.de/spaces/MBI/pages/3216569738/Architecture) — DT Mobility Confluence Space
+
 **Status:** Living document — reflects implementation in progress
 
 ---
@@ -229,6 +231,9 @@ e:c:car is the vehicle configuration and ordering portal. It presents the vehicl
                    │   Cards, Claims) │  │   Contracts)    │  │  DAT, PEGA,    │
                    └──────────────────┘  └─────────────────┘  │  High Mobility)│
                                                                └────────────────┘
+
+All Simplifier → SAP / external traffic routes via TARDIS gateway (mandatory).
+External API integrations route via Abiscon Cloud hub (see ADR-002).
 ```
 
 ---
@@ -256,7 +261,7 @@ e:c:car is the vehicle configuration and ordering portal. It presents the vehicl
 4. Approved invoice posted in **SAP OFI**
 
 ### 4.4 Person Data Synchronisation
-1. **Simplifier Low-Code Scheduled Job** periodically calls the EmployeeDataAPI (Cayman/HR)
+1. **Simplifier Low-Code Scheduled Job** periodically calls the EmployeeDataAPI (Cayman/HR) or HR Data Highway REST API
 2. Changed person data triggers Abiscon `Persons org data changed` process
 3. Abiscon updates person records and propagates to SAP business partner if needed
 
@@ -264,7 +269,7 @@ e:c:car is the vehicle configuration and ordering portal. It presents the vehicl
 
 ## 5. Interface Overview
 
-### Low-Code ↔ Abiscon (internal platform API)
+### Low-Code ↔ Abiscon Process API
 | Interface | Purpose |
 |---|---|
 | `Process start` | Initiate a new Abiscon process instance |
@@ -285,23 +290,40 @@ e:c:car is the vehicle configuration and ordering portal. It presents the vehicl
 | Receive configured car | ec:car → Low-Code | Final vehicle configuration for ordering |
 
 ### Abiscon ↔ External Systems
-| System | Interface | Type |
-|---|---|---|
-| Shell | B2B Mobility Card (order, status update, transaction data) | REST |
-| ARAL | Fleet Card API (bp.com) | REST |
-| KBA | GKS iKFZ Großkundenschnittstelle | SOAP |
-| DAT | SilverDAT (VIN lookup, maintenance plans) | — |
-| High Mobility | Auto API (telematics) | REST |
-| TSI | EU Digital Wallet driver licence data | — |
+| System | Interface | Type | Notes |
+|---|---|---|---|
+| Shell | B2B Mobility Card (order, status update, transaction data) | REST | Card ordering + fuel transaction import |
+| ARAL | Fleet Card API (bp.com) | REST | Fuel card management |
+| UTA | Fleet card | REST | Fuel card management |
+| Total | Fleet card | REST | Fuel card management |
+| KBA | GKS iKFZ Großkundenschnittstelle | SOAP | Vehicle registration authority; **XAdES signature required** |
+| DAT | SilverDAT (VIN lookup, maintenance plans, residual value) | REST | Vehicle master data enrichment |
+| High Mobility | Auto API (telematics) | REST | Live vehicle telematics |
+| TSI | EU Digital Wallet — driver licence data | — | Driver licence verification |
+| BMW / VW / Carglass | EDI via C-PeX → eBilling BTP | EDI | Order/invoice exchange with OEM partners |
+| EntraID / CAIMAN | Identity | REST | Authentication and employee identity |
+| AskT | Internal chatbot | REST | Support routing |
 
 ### SAP OFI Interfaces
 | Interface | Direction | Purpose |
 |---|---|---|
-| Billing Document Create | Abiscon → SAP | Create billing documents for fleet sales contracts |
-| Equipment | Abiscon → SAP | Create/update SAP PM equipment records |
-| Archive Link | → SAP | Document archiving |
-| EDI/INTRASTAT | SAP ↔ External | Trade statistics reporting |
+| Billing Document Create (SD) | Abiscon → SAP | Create billing documents for fleet sales contracts |
+| Equipment (PM) | Abiscon → SAP | Create/update SAP PM equipment records |
+| Archive Link | → SAP | Document archiving (OpenText VIM) |
+| IDoc YZA | SAP ↔ Abiscon | Core fleet data exchange IDocs |
+| EDI / INTRASTAT | SAP ↔ External | Trade statistics reporting |
 | Kostenstellenrahmen (EDMtoTMS) | External → OFI | Cost centre framework data |
+| Frame / Purchasing Contract (ME31K) | Internal | SAP procurement — purchasing contracts |
+| Maintenance Plan (IP01 / IP11) | Internal | Preventive maintenance scheduling |
+| OFI VIM / OpenText | → SAP | Incoming vendor invoice management |
+
+### Low-Code ↔ HR and Identity Systems
+| Interface | Direction | Purpose |
+|---|---|---|
+| HR Data Highway | HR → Low-Code | SAP REST API — employee master data sync |
+| EmployeeDataAPI (Cayman) | HR → Low-Code | HR data for person sync scheduled job |
+| PEGA — Receive entitlement | PEGA → Low-Code | Employee vehicle entitlement data |
+| PEGA Monetization | Low-Code → PEGA | Create monetization record for ordered vehicle |
 
 ---
 
@@ -329,6 +351,7 @@ e:c:car is the vehicle configuration and ordering portal. It presents the vehicl
 - **License plate registration** (City of Bonn API) — pending TMS decision
 - **Fleet sales contract management** — decision needed on how order-to-cash is handled
 - **Insurance management** (policy + claims) — scheduled for Q4 2026 / Q1 2027
+- **ADR-001 Gate A/B** — preliminary calculation persistence layer: decision point at Gate A (whether Abiscon OData path is feasible) and Gate B (whether Simplifier/GCP no-sync path is acceptable)
 
 ---
 
@@ -343,3 +366,135 @@ e:c:car is the vehicle configuration and ordering portal. It presents the vehicl
 | Person management, License plate management | Beginning Q3 2026 |
 | Fleet card management | Beginning Q4 2026 |
 | Insurance claim/policy management | Q4 2026 – Q1 2027 |
+
+---
+
+## 9. Architecture Principles
+
+### 9.1 SAP Clean Core
+
+The SAP OFI implementation follows the **Clean Core** principle mandated for the ReFIT programme:
+
+- **No Z-tables in production** — all custom persistence must use standard SAP objects or BTP-approved extension patterns
+- **ABAP Cloud only** — custom ABAP development (if any) is restricted to ABAP Cloud APIs; no classic ABAP extensions
+- **Standard APIs only** — integration uses SAP-released OData, SOAP, or REST APIs; no direct database table reads from external systems
+- **Consumer vs. AddOn namespace** — Abiscon Fleet operates as a SAP AddOn (own namespace); integrations from external systems use the Consumer namespace (standard released APIs only)
+
+This constraint directly influences ADR-001: the preferred persistence layer for the preliminary calculation uses Abiscon's own OData APIs backed by SAP-standard objects, rather than Z-tables.
+
+### 9.2 TARDIS Integration Gateway
+
+**All integration between Simplifier and SAP (or any T-Systems internal system) must route through the TARDIS gateway.** Direct calls from Simplifier to SAP are not permitted.
+
+- TARDIS is the mandatory API gateway for the Deutsche Telekom platform
+- Simplifier Connectors must be configured to target TARDIS endpoints, not SAP directly
+- TARDIS provides: authentication, rate limiting, observability, and policy enforcement
+
+### 9.3 BTP Integration Layer
+
+SAP Business Technology Platform (BTP) is used for:
+- **Cloud Connector** — secure tunnel from BTP to on-premise SAP systems
+- **Integration Suite** — message transformation and routing (where required)
+- **eBilling** — EDI processing for OEM partner invoices (BMW, VW, Carglass via C-PeX)
+
+### 9.4 Microservice Architecture
+
+Abiscon Fleet on OFI follows a microservice architecture:
+- Fleet domain logic is encapsulated in the Abiscon AddOn, not spread across SAP customising
+- External API integrations are routed via the **Abiscon Cloud hub** (see ADR-002) — a Java/Quarkus application running on StackIT Germany
+- The Abiscon Cloud hub provides: PSA (privacy and security assessment), observability (metrics, logs, traces), SLA management, runbooks, and an exit concept
+- All processing in the Abiscon Cloud hub is **transient** — no data persistence; data sovereignty stays in SAP
+
+---
+
+## 10. SAP Environments
+
+The ReFIT programme uses the following SAP landscape:
+
+| Environment | System ID | Purpose | Notes |
+|---|---|---|---|
+| Sandbox | TF4 | Prototype / spike environment | Independent sandbox |
+| Development | XF4 | Active development | Primary build environment |
+| Quality Assurance | ZF4 | QA testing | Current integration QA |
+| QA (new) | AF4 | Integration QA (from Jan 2027) | Replaces ZF4 for integration testing |
+| Migration | WF4 | Data migration testing | Used for migration rehearsals |
+
+**Transport route:** `XF4 → ZF4 → AF4`
+
+Changes are developed in XF4, tested in ZF4, and promoted to AF4 for integration QA before production release. TF4 and WF4 are isolated and do not participate in the transport route.
+
+---
+
+## 11. Simplifier Integration Guidelines
+
+The architecture Confluence pages define the following constraints for the Simplifier platform's role in the overall system:
+
+### 11.1 Scope boundaries
+- Simplifier's scope is **limited to filling gaps in the Abiscon Process Manager** that Abiscon cannot cover natively
+- Simplifier does not replace Abiscon's own fleet UI — it complements it with driver-facing and calculation UIs
+- Any new UI requirements that Abiscon can cover should be addressed in Abiscon, not duplicated in Simplifier
+
+### 11.2 Integration gateway rule
+- **Simplifier must always use TARDIS** as the integration gateway — no direct SAP calls
+- Connector configurations must point to TARDIS-registered endpoints
+
+### 11.3 Data sovereignty and persistence
+- **Data sovereignty lies in SAP** — Simplifier is not the system of record for any fleet or financial data
+- Simplifier may **cache data** for performance (e.g. vehicle model variants for the preliminary calculation screen)
+- Persistent storage in Simplifier is **intermediate only** — data must be synchronised to SAP as soon as the relevant process step completes
+- Long-term storage of business data in Simplifier without SAP synchronisation is not permitted (this is the constraint driving ADR-001)
+
+### 11.4 Multi-platform delivery
+- Simplifier UIs must support **portal / web / mobile** — the Driver App is accessed from both desktop browsers and mobile devices
+- OpenUI5 1.96.40 responsive design patterns must be applied consistently
+
+---
+
+## 12. Architecture Decision Records
+
+### ADR-001: Persistent Layer for Preliminary Calculation
+
+**Question:** Where is the preliminary fleet cost calculation data persisted?
+
+The preliminary calculation screen allows fleet managers and HR to estimate the total mobility cost for a vehicle before an entitlement or order is created. This data must be stored somewhere between sessions.
+
+**Options evaluated:**
+
+| Option | Approach | Status |
+|---|---|---|
+| **Option 1 — Z-tables (interim)** | Store calculation data in SAP Z-tables (custom tables) | Interim only — violates Clean Core for production |
+| **Option 2 — Abiscon OData + SAP standard** | Use Abiscon's own OData APIs backed by SAP-standard objects | **Preferred (Gate A)** — Clean Core compliant |
+| **Option 3 — Simplifier / GCP (no-sync fallback)** | Store in Simplifier or GCP with no SAP synchronisation | Fallback (Gate B) — only if Option 2 is not feasible |
+
+**Decision:** Proceed with Option 2 if the Abiscon OData path is technically feasible (Gate A decision). If not feasible, fall back to Option 3 (Gate B). Option 1 is permitted as an interim measure during development only.
+
+**Key constraint:** The Clean Core principle forbids Z-tables in the production landscape. Any interim Z-table usage must have a migration path to Option 2 or 3 before go-live.
+
+---
+
+### ADR-002: External API Integration Hub
+
+**Question:** How should external API integrations (KBA, Shell, ARAL, DAT, High Mobility, etc.) be connected to the platform?
+
+**Options evaluated:**
+
+| Option | Approach |
+|---|---|
+| **Option A — SAP Integration Suite (direct)** | Route all external API calls through SAP BTP Integration Suite |
+| **Option B — Abiscon Cloud hub** | Route external API calls through a dedicated Java/Quarkus microservice on StackIT Germany |
+
+**Decision: Option B — Abiscon Cloud hub** is recommended.
+
+**Key drivers:**
+- **XAdES signature requirement** for KBA GKS iKFZ (German vehicle registration SOAP interface) — this XML-level signature cannot be handled by SAP Integration Suite without significant custom development; Abiscon Cloud hub handles it natively
+- Abiscon already manages Shell, ARAL, DAT, and High Mobility integrations — centralising these in the Abiscon Cloud hub reduces integration sprawl
+- The hub provides built-in PSA, observability, SLA management, runbooks, and an exit concept
+
+**Safeguards required for Option B:**
+- Privacy and Security Assessment (PSA) must be completed for the Abiscon Cloud hub
+- Observability: metrics, structured logs, and distributed tracing must be in place
+- SLA agreement with Abiscon
+- Runbooks for incident response
+- Exit concept: documented path to migrate integrations away from Abiscon Cloud if needed
+
+**Infrastructure:** Abiscon Cloud runs on **StackIT Germany** (T-Systems cloud) using Java/Quarkus. All processing is transient — no data is persisted in Abiscon Cloud.
