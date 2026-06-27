@@ -1,0 +1,47 @@
+{
+  "mcpServers": {
+    "simplifier-mcp": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "@simplifierag/simplifier-mcp@latest"
+      ],
+      "env": {
+        "SIMPLIFIER_BASE_URL": "${SIMPLIFIER_BASE_URL}",
+        "SIMPLIFIER_TOKEN": "${SIMPLIFIER_TOKEN}"
+      }
+    },
+    "ui5-mcp-server": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@ui5/mcp-server"
+      ],
+      "env": {
+        "UI5_MCP_SERVER_CDN_URL": "https://ui5.sap.com/1.96.40"
+      }
+    },
+    "figma": {
+      "type": "http",
+      "url": "http://127.0.0.1:3845/mcp"
+    },
+    "playwright": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "@playwright/mcp@latest",
+        "--browser",
+        "chrome"
+      ]
+    },
+    "chrome-devtools": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "chrome-devtools-mcp@latest"
+      ]
+    }
+  }
+}

@@ -1,0 +1,26 @@
+# Secrets — never commit these
+.env
+.credentials
+*.credentials
+mcp-http.log
+
+# Dependency directories
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+build/
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Test output
+coverage/
+test-results/
+playwright-report/
