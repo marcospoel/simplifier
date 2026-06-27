@@ -40,11 +40,20 @@ This project builds enterprise applications on the **Simplifier Low-Code Platfor
 | **Module** | Reusable app component with a defined interface |
 | **Project** | Organizational container grouping all artifacts |
 
+## Integration gateway: TARDIS
+
+All Simplifier → SAP / Telekom internal API calls must route through **TARDIS StarGate**. See [`docs/tardis.md`](tardis.md) for:
+- Component overview (StarGate, Iris, Rover, Horizon, Chevron, Raccoon, Drax)
+- OAuth2 M2M auth flow (Iris Client Credentials)
+- Rover `rover.yaml` reference and onboarding steps
+- Simplifier-specific wiring: connector base URL, token caching, subscription registration
+
 ## MCP server topology
 
 ```
 Claude Code
   ├── simplifier-mcp  →  https://tsystems-eval.simplifier.cloud  (platform API)
+  ├── Telecontext     →  https://telecontext.trap.ng.telekom.net  (Jira + Confluence)
   ├── ui5-mcp-server  →  https://ui5.sap.com/1.96.40             (UI5 docs/lint)
   ├── figma           →  http://127.0.0.1:3845                   (Figma desktop)
   ├── playwright      →  Chrome browser                          (UI testing)
