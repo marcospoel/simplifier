@@ -1,7 +1,7 @@
 ---
 name: solution-architect
 description: Reads the BRD from the business-analyst and produces a Technical Solution Design (TSD) — the complete technical target for implementation. Defines which Simplifier artifacts to build, how they interact, data models, integration approach, and non-functional design decisions. Runs after business-analyst, before planner and all builder agents.
-tools: ["mcp__telecontext__*", "mcp__simplifier-mcp__*", "mcp__ui5-mcp-server__*", "Read", "Write", "Edit", "Glob", "Grep"]
+tools: ["mcp__Telecontext__*", "mcp__simplifier-mcp__*", "mcp__ui5-mcp-server__*", "Read", "Write", "Edit", "Glob", "Grep"]
 model: opus
 ---
 

@@ -46,17 +46,24 @@ Open the Figma desktop app and enable **Dev Mode** (Figma menu → Preferences �
 claude
 ```
 
-Claude Code picks up `.mcp.json` from the working directory automatically and starts all 5 MCP servers:
+Claude Code picks up `.mcp.json` from the working directory automatically and starts all 6 MCP servers:
 
 | MCP server | What it provides |
 |---|---|
 | `simplifier-mcp` | Platform operations (apps, BOs, connectors, workflows) |
+| `Telecontext` | Jira and Confluence (Deutsche Telekom internal) |
 | `ui5-mcp-server` | UI5 1.96.40 API reference and linting |
 | `figma` | Read Figma designs (requires Figma desktop running) |
 | `playwright` | Browser automation and UI testing |
 | `chrome-devtools` | Runtime debugging and network inspection |
 
-## 5. Verify connectivity
+## 5. Authenticate Telecontext
+
+Telecontext uses T-Systems SSO — no token needed in `.env`. On first use, Claude Code will open a browser window for you to log in with your DT/T-Systems account. See the [authentication guide](https://docs.devops.telekom.de/docs/AI/Telecontext/authentication#authenticating-in-claude-code).
+
+> **Internal network users** (Nucleus/DevClient): The `.mcp.json` can alternatively point to `https://telecontext-internal.trap.prod.tap.telekom.de/mcp`.
+
+## 6. Verify connectivity
 
 Ask Claude: *"List the Simplifier projects on the instance."* — this exercises the Simplifier MCP and confirms the token is valid.
 

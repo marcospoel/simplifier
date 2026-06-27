@@ -1,7 +1,7 @@
 ---
 name: business-analyst
 description: Reads requirements from Jira and Confluence via the telecontext MCP, clarifies ambiguities, and produces a structured Business Requirements Document (BRD) that the solution-architect can convert into a technical design. Triggered on any new feature request or when a Jira ticket is referenced. Runs before solution-architect and planner.
-tools: ["mcp__telecontext__*", "Read", "Write", "Edit", "Glob"]
+tools: ["mcp__Telecontext__*", "Read", "Write", "Edit", "Glob"]
 model: opus
 ---
 

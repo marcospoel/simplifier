@@ -15,7 +15,7 @@ This project builds and maintains applications on the **Simplifier Low-Code Plat
 ## MCP Server Priority Order
 
 1. **simplifier-mcp** — all Simplifier platform operations (apps, screens, BOs, connectors, data types, workflows)
-2. **telecontext** — Jira and Confluence: requirements, tickets, documentation, comments
+2. **Telecontext** — Jira and Confluence: requirements, tickets, documentation, comments (auth via Claude Code browser flow — no token needed)
 3. **ui5-mcp-server** — UI5 API reference, linting, manifest validation, project scaffolding
 4. **figma** — read Figma designs (components, layout, variables) as the source of truth for UI
 5. **playwright** — UI inspection, deviation detection between Figma and live app, automated testing
