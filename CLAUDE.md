@@ -15,10 +15,11 @@ This project builds and maintains applications on the **Simplifier Low-Code Plat
 ## MCP Server Priority Order
 
 1. **simplifier-mcp** — all Simplifier platform operations (apps, screens, BOs, connectors, data types, workflows)
-2. **ui5-mcp-server** — UI5 API reference, linting, manifest validation, project scaffolding
-3. **figma** — read Figma designs (components, layout, variables) as the source of truth for UI
-4. **playwright** — UI inspection, deviation detection between Figma and live app, automated testing
-5. **chrome-devtools** — runtime debugging, network inspection, performance tracing, console errors
+2. **telecontext** — Jira and Confluence: requirements, tickets, documentation, comments
+3. **ui5-mcp-server** — UI5 API reference, linting, manifest validation, project scaffolding
+4. **figma** — read Figma designs (components, layout, variables) as the source of truth for UI
+5. **playwright** — UI inspection, deviation detection between Figma and live app, automated testing
+6. **chrome-devtools** — runtime debugging, network inspection, performance tracing, console errors
 
 ## Agent Orchestration
 
@@ -26,7 +27,8 @@ Invoke agents **proactively** — do not wait for the user to ask. Run independe
 
 | Situation | Agent to invoke |
 |---|---|
-| New feature or screen to build | `planner` → then relevant builders in parallel |
+| New feature request or Jira ticket referenced | `business-analyst` → `solution-architect` → `planner` |
+| Architecture or multi-system design question | `solution-architect` |
 | Building/modifying a Simplifier App or Screen | `simplifier-app-builder` |
 | Creating/editing a Business Object | `simplifier-bo-developer` |
 | Setting up or modifying a Connector | `simplifier-connector-manager` |
@@ -35,8 +37,7 @@ Invoke agents **proactively** — do not wait for the user to ask. Run independe
 | Comparing live UI against Figma design | `figma-inspector` |
 | Writing or running E2E / UI tests | `ui-tester` |
 | Debugging runtime errors or network issues | `debugger` |
-| After any code change | `code-reviewer` |
-| Architecture or multi-system design question | `planner` |
+| After any code change | `code-reviewer` → `doc-writer` |
 
 ## Development Commands
 
@@ -82,10 +83,18 @@ Figma is the **single source of truth for UI**. Before implementing any screen:
 ## File Structure
 
 ```
-.mcp.json           — MCP server configuration
-.env                — Local secrets (gitignored)
-.env.example        — Template for env vars
-CLAUDE.md           — This file
-AGENTS.md           — Agent index and orchestration guide
-agents/             — Specialized subagent definitions
+.mcp.json               — MCP server configuration
+.env                    — Local secrets (gitignored)
+.env.example            — Template for env vars
+CLAUDE.md               — This file
+AGENTS.md               — Agent index and orchestration guide
+agents/                 — Specialized subagent definitions
+docs/
+  architecture.md       — System overview and platform layers
+  setup.md              — Onboarding and setup guide
+  changelog.md          — Dated change history
+  requirements/         — BRDs produced by business-analyst
+  designs/              — TSDs produced by solution-architect
+  artifacts/            — Simplifier artifact registry (apps, BOs, connectors, etc.)
+  screens/              — Per-screen specs
 ```

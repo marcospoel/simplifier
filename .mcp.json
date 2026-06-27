@@ -42,6 +42,13 @@
         "-y",
         "chrome-devtools-mcp@latest"
       ]
+    },
+    "telecontext": {
+      "type": "http",
+      "url": "https://telecontext.trap.ng.telekom.net/mcp",
+      "headers": {
+        "Authorization": "Bearer ${TELECONTEXT_TOKEN}"
+      }
     }
   }
 }

@@ -4,6 +4,7 @@ This project uses specialized subagents for distinct concerns. Agents are invoke
 
 ## Core Principles
 
+- **Requirements first**: Every feature starts with `business-analyst` reading Jira/Confluence, then `solution-architect` producing a TSD before any builder runs.
 - **Simplifier-first**: Always use the Simplifier MCP server before calling the REST API directly.
 - **Figma as truth**: UI must match Figma designs. Verify with Playwright after every screen change.
 - **OpenUI5 1.96.40 only**: No other UI5 version is permitted anywhere in generated code or config.
@@ -14,7 +15,9 @@ This project uses specialized subagents for distinct concerns. Agents are invoke
 
 | Agent | File | Role | Auto-trigger |
 |---|---|---|---|
-| planner | `agents/planner.md` | Break down features into Simplifier artifacts + ordered build steps | New feature, multi-screen work, architecture question |
+| business-analyst | `agents/business-analyst.md` | Read Jira/Confluence, clarify requirements, produce BRD in `docs/requirements/` | Any new feature request; when a Jira ticket is referenced |
+| solution-architect | `agents/solution-architect.md` | Convert BRD into Technical Solution Design (TSD) in `docs/designs/` — artifact graph, data model, BO contracts, connector design, build order | After business-analyst; before planner and all builders |
+| planner | `agents/planner.md` | Break down TSD build order into an ordered agent execution plan | After solution-architect; on any new feature |
 | simplifier-app-builder | `agents/simplifier-app-builder.md` | Create/modify Simplifier Apps, Screens, UI widgets, navigation | Building or changing any app screen |
 | simplifier-bo-developer | `agents/simplifier-bo-developer.md` | Create/edit Business Objects and their JavaScript functions | Any server-side logic change |
 | simplifier-connector-manager | `agents/simplifier-connector-manager.md` | Create/configure Connectors, Logins, Connector Calls | New integration, connector change |
@@ -29,40 +32,39 @@ This project uses specialized subagents for distinct concerns. Agents are invoke
 
 ## Orchestration Patterns
 
-### New Screen from Figma
+### Full Feature (standard — from Jira ticket to deployed code)
 ```
-planner → figma-inspector (read design) → simplifier-app-builder + ui5-developer (parallel) → ui-tester → code-reviewer
+business-analyst (read Jira/Confluence → BRD)
+  ↓
+solution-architect (BRD → TSD: artifact graph, data model, BO contracts)
+  ↓
+planner (TSD → ordered agent execution plan)
+  ↓ (parallel)
+simplifier-connector-manager   simplifier-bo-developer   simplifier-app-builder + ui5-developer
+  ↓ (all complete)
+figma-inspector → ui-tester → code-reviewer → doc-writer → retrospective
 ```
 
-### New Backend Integration
+### New Screen from Figma (UI only, no new backend)
 ```
-planner → simplifier-connector-manager → simplifier-bo-developer → ui-tester → code-reviewer
+business-analyst → solution-architect → planner
+  ↓
+figma-inspector → simplifier-app-builder + ui5-developer (parallel) → ui-tester → code-reviewer → doc-writer
+```
+
+### New Backend Integration (no new screens)
+```
+business-analyst → solution-architect → planner
+  ↓
+simplifier-connector-manager → simplifier-bo-developer → ui-tester → code-reviewer → doc-writer
 ```
 
 ### Bug Fix
 ```
-debugger → (simplifier-bo-developer | ui5-developer) → ui-tester → code-reviewer
-```
-
-### Full Feature
-```
-planner
-  ↓ (parallel)
-simplifier-connector-manager  simplifier-bo-developer  simplifier-app-builder
-  ↓ (all complete)
-figma-inspector → ui-tester → code-reviewer → retrospective
+debugger → (simplifier-bo-developer | ui5-developer) → ui-tester → code-reviewer → doc-writer
 ```
 
 ### Standing Improvement Cycle (every 5 features)
 ```
 retrospective → (edits to agents/*.md, AGENTS.md, CLAUDE.md) → doc-writer → git commit
-```
-
-### Full Feature (with docs)
-```
-planner
-  ↓ (parallel)
-simplifier-connector-manager  simplifier-bo-developer  simplifier-app-builder
-  ↓ (all complete)
-figma-inspector → ui-tester → code-reviewer → doc-writer → retrospective
 ```
