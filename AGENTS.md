@@ -24,6 +24,7 @@ This project uses specialized subagents for distinct concerns. Agents are invoke
 | ui-tester | `agents/ui-tester.md` | Write and run Playwright tests; inspect live UI; report Figma deviations | After any screen or BO change |
 | debugger | `agents/debugger.md` | Debug runtime errors via Chrome DevTools MCP; inspect network, console, performance | On any error report or unexpected behavior |
 | code-reviewer | `agents/code-reviewer.md` | Review all changes for correctness, UI5 best practices, security, Simplifier patterns | After every code or config change |
+| retrospective | `agents/retrospective.md` | Evaluate completed work and improve agent instructions, orchestration patterns, and constraints | After every completed feature; after repeated agent failures; every 5 features as a standing cycle |
 
 ## Orchestration Patterns
 
@@ -48,5 +49,10 @@ planner
   ↓ (parallel)
 simplifier-connector-manager  simplifier-bo-developer  simplifier-app-builder
   ↓ (all complete)
-figma-inspector → ui-tester → code-reviewer
+figma-inspector → ui-tester → code-reviewer → retrospective
+```
+
+### Standing Improvement Cycle (every 5 features)
+```
+retrospective → (edits to agents/*.md, AGENTS.md, CLAUDE.md) → git commit
 ```
