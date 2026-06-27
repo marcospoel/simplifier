@@ -25,6 +25,7 @@ This project uses specialized subagents for distinct concerns. Agents are invoke
 | debugger | `agents/debugger.md` | Debug runtime errors via Chrome DevTools MCP; inspect network, console, performance | On any error report or unexpected behavior |
 | code-reviewer | `agents/code-reviewer.md` | Review all changes for correctness, UI5 best practices, security, Simplifier patterns | After every code or config change |
 | retrospective | `agents/retrospective.md` | Evaluate completed work and improve agent instructions, orchestration patterns, and constraints | After every completed feature; after repeated agent failures; every 5 features as a standing cycle |
+| doc-writer | `agents/doc-writer.md` | Create and keep `docs/` current — architecture, artifact specs, screen specs, setup guide, changelog | After any artifact is created or changed; after `retrospective` edits agent files |
 
 ## Orchestration Patterns
 
@@ -54,5 +55,14 @@ figma-inspector → ui-tester → code-reviewer → retrospective
 
 ### Standing Improvement Cycle (every 5 features)
 ```
-retrospective → (edits to agents/*.md, AGENTS.md, CLAUDE.md) → git commit
+retrospective → (edits to agents/*.md, AGENTS.md, CLAUDE.md) → doc-writer → git commit
+```
+
+### Full Feature (with docs)
+```
+planner
+  ↓ (parallel)
+simplifier-connector-manager  simplifier-bo-developer  simplifier-app-builder
+  ↓ (all complete)
+figma-inspector → ui-tester → code-reviewer → doc-writer → retrospective
 ```
