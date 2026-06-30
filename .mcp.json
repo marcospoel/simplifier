@@ -2,14 +2,11 @@
   "mcpServers": {
     "simplifier-mcp": {
       "type": "stdio",
-      "command": "npx",
+      "command": "node",
       "args": [
-        "@simplifierag/simplifier-mcp@latest"
+        "C:\\Users\\A110231610\\OneDrive - Deutsche Telekom AG\\claude\\simplifier\\simplifier-mcp-refit\\dist\\index.js"
       ],
-      "env": {
-        "SIMPLIFIER_BASE_URL": "${SIMPLIFIER_BASE_URL}",
-        "SIMPLIFIER_TOKEN": "${SIMPLIFIER_TOKEN}"
-      }
+      "cwd": "C:\\Users\\A110231610\\OneDrive - Deutsche Telekom AG\\claude\\simplifier"
     },
     "ui5-mcp-server": {
       "type": "stdio",
@@ -24,7 +21,7 @@
     },
     "figma": {
       "type": "http",
-      "url": "http://127.0.0.1:3845/mcp"
+      "url": "https://mcp.figma.com/mcp"
     },
     "playwright": {
       "type": "stdio",

@@ -34,9 +34,20 @@ Use Simplifier MCP tools for:
 - Setting up data objects and connector bindings
 - Configuring process logic (events, conditions, navigation)
 
+## Filter dropdown → table pattern
+
+When wiring a `Select` widget to filter a table, follow this checklist:
+
+1. **Get widget UUIDs first** — run `screen-read` with a jq filter for the Select and the table. Never use widget names in process story ScreenItem sources; always use UUIDs.
+2. **Create one ItemEvent `change` story per filter Select.** SubProcess Input: `ScreenItem(UUID.selectedKey)` → `Parameter(filterStatus)` plus `Variable(varOtherFilter)` → `Parameter(filterScope)`.
+3. **Write filter state back** — map `Parameter(echoFilterStatus)` → `Variable(varFilterStatus)` in SubProcess Output so Refresh can re-apply the same filter.
+4. **Refresh story reads variables, not ScreenItems** — `Variable(varFilterStatus)` → `Parameter(filterStatus)`.
+5. **BO must echo filter values** — output `echoFilterStatus`/`echoFilterScope` as optional String params. See `docs/simplifier-conventions.md` → "Filter dropdown → table pattern".
+
 ## Workflow
 
 1. Read the planner output to understand which screens to build.
 2. Check if the app exists; create it if not.
 3. For each screen: read Figma design → create screen → add widgets → bind data → wire navigation.
-4. Report what was created/changed for `ui-tester` and `code-reviewer`.
+4. Apply filter pattern checklist above for any screen with a filter dropdown + table.
+5. Report what was created/changed for `ui-tester` and `code-reviewer`.

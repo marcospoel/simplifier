@@ -37,6 +37,9 @@ Invoke agents **proactively** — do not wait for the user to ask. Run independe
 | Comparing live UI against Figma design | `figma-inspector` |
 | Writing or running E2E / UI tests | `ui-tester` |
 | Debugging runtime errors or network issues | `debugger` |
+| Any BO, connector, API, or RBAC change | `security` (parallel with builders) |
+| Running security / penetration tests | `security-tester` |
+| Filling out or updating the DT PSA document | `security` |
 | After any code change | `code-reviewer` → `doc-writer` |
 
 ## Development Commands
@@ -79,6 +82,20 @@ Figma is the **single source of truth for UI**. Before implementing any screen:
 1. Use `figma` MCP to read the relevant frame/component.
 2. Use `ui5-developer` to implement with OpenUI5 1.96.40 best practices.
 3. Use `playwright` + `figma-inspector` to verify the live app matches the design.
+
+## Development Conventions
+
+Full conventions are in [`docs/simplifier-conventions.md`](docs/simplifier-conventions.md). Key rules:
+
+- **Naming**: BOs prefixed `b` (server), `c` (client), `SF_` (framework); connectors `c` or `SF_`; schemas `s`; entity sets `es`
+- **Server BO JS**: synchronous only; `input.*` / `output.*`; never `return`; always `output.success`; always `try/catch`; `Simplifier.Log.*` for logging
+- **Client BO JS**: `(oEvent, oPayload, fnSuccess, fnError)`; never call connectors directly; every path must call `fnSuccess` or `fnError`
+- **Data binding**: bind in exactly **one** place — view OR process; never both
+- **SQL**: named bind params (`:param:`); never string concat; NULL-safe patterns for nullable FK filters; explicit column names
+- **Connector calls**: `optional: true` for any nullable input; read-before-write when modifying; test via `businessobject-function-test`
+- **Validation**: client-side (format/range/required) + server-side (uniqueness/FK/business rules); overlap confirmation flow
+- **Audit trail**: `bAuditTrail` → `bAuditTrailDynamic` → `bAuditTrailClient` for master data changes
+- **Mock services**: always schema `sMockData`; connector `cMockData`; BO `bMockData`; entity sets prefixed `es`
 
 ## File Structure
 

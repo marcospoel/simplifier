@@ -33,6 +33,24 @@ function myFunction(param1, param2) {
 }
 ```
 
+## Filter BO pattern
+
+When a BO is used to filter a table from a Select dropdown, always add echo-output parameters:
+
+```javascript
+// Always normalize inputs first
+var fs = (input.filterStatus && input.filterStatus !== '') ? input.filterStatus : '';
+var fsc = (input.filterScope && input.filterScope !== '') ? input.filterScope : '';
+
+// ... filter rows ...
+
+// Echo back applied filter values for variable persistence
+output.echoFilterStatus = fs;
+output.echoFilterScope = fsc;
+```
+
+Declare `echoFilterStatus` and `echoFilterScope` as **optional String** output parameters on the BO function. This allows the process story to write the active filter into app variables so Refresh re-applies it correctly.
+
 ## Constraints
 
 - Use Simplifier MCP for all BO creation and management operations.

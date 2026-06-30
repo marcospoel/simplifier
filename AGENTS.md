@@ -27,6 +27,8 @@ This project uses specialized subagents for distinct concerns. Agents are invoke
 | ui-tester | `agents/ui-tester.md` | Write and run Playwright tests; inspect live UI; report Figma deviations | After any screen or BO change |
 | debugger | `agents/debugger.md` | Debug runtime errors via Chrome DevTools MCP; inspect network, console, performance | On any error report or unexpected behavior |
 | code-reviewer | `agents/code-reviewer.md` | Review all changes for correctness, UI5 best practices, security, Simplifier patterns | After every code or config change |
+| security | `agents/security.md` | Enforce RBAC, OWASP Top-10, and Simplifier security patterns across all BOs, connectors, and APIs; research CVEs; maintain security docs and PSA; produce test checklists | Parallel with every builder; before code-reviewer on auth/data/API artifacts; on any RBAC or integration change |
+| security-tester | `agents/security-tester.md` | Execute API/backend security test cases (access control, injection, headers, token leakage, SSRF) from checklists produced by the security agent | After security agent produces a test checklist; after any BO, connector, or auth change |
 | retrospective | `agents/retrospective.md` | Evaluate completed work and improve agent instructions, orchestration patterns, and constraints | After every completed feature; after repeated agent failures; every 5 features as a standing cycle |
 | doc-writer | `agents/doc-writer.md` | Create and keep `docs/` current — architecture, artifact specs, screen specs, setup guide, changelog | After any artifact is created or changed; after `retrospective` edits agent files |
 
@@ -38,11 +40,14 @@ business-analyst (read Jira/Confluence → BRD)
   ↓
 solution-architect (BRD → TSD: artifact graph, data model, BO contracts)
   ↓
+security (review TSD for security gaps → update PSA)
+  ↓
 planner (TSD → ordered agent execution plan)
   ↓ (parallel)
 simplifier-connector-manager   simplifier-bo-developer   simplifier-app-builder + ui5-developer
+security (parallel with all builders — review BOs, connectors, RBAC)
   ↓ (all complete)
-figma-inspector → ui-tester → code-reviewer → doc-writer → retrospective
+security-tester → figma-inspector → ui-tester → code-reviewer → doc-writer → retrospective
 ```
 
 ### New Screen from Figma (UI only, no new backend)
@@ -56,12 +61,35 @@ figma-inspector → simplifier-app-builder + ui5-developer (parallel) → ui-tes
 ```
 business-analyst → solution-architect → planner
   ↓
-simplifier-connector-manager → simplifier-bo-developer → ui-tester → code-reviewer → doc-writer
+simplifier-connector-manager → simplifier-bo-developer
+security (parallel — review connector config, BO auth, API security posture)
+  ↓
+security-tester → code-reviewer → doc-writer
+```
+
+### RBAC Change (new role, permission update, user assignment)
+```
+security (review access matrix → update rbac.md and PSA)
+  ↓
+security-tester (test access control enforcement)
+  ↓
+doc-writer (update docs/security/)
 ```
 
 ### Bug Fix
 ```
 debugger → (simplifier-bo-developer | ui5-developer) → ui-tester → code-reviewer → doc-writer
+```
+
+### Security Review (ad-hoc or triggered by new CVE)
+```
+security (research CVE / advisory → assess impact → update cve-watchlist.md)
+  ↓
+security-tester (run relevant test cases)
+  ↓
+(simplifier-bo-developer | simplifier-connector-manager) if patching needed
+  ↓
+code-reviewer → doc-writer
 ```
 
 ### Standing Improvement Cycle (every 5 features)
